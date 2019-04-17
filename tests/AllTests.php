@@ -6,6 +6,8 @@
 // it work everywhere.
 //
 
+require __DIR__ . '/../vendor/autoload.php';
+
 error_reporting(E_ALL | E_STRICT);
 
 if (!defined('PHPUnit_MAIN_METHOD')) {
@@ -13,6 +15,7 @@ if (!defined('PHPUnit_MAIN_METHOD')) {
 }
 
 require_once 'PHPUnit/TextUI/TestRunner.php';
+require_once 'Net_DNS2Test.php';
 require_once 'Net_DNS2_ParserTest.php';
 require_once 'Net_DNS2_ResolverTest.php';
 require_once 'Net_DNS2_DNSSECTest.php';
@@ -27,6 +30,11 @@ class Net_DNS2_AllTests
     {
         $suite = new PHPUnit_Framework_TestSuite('PEAR - Net_DNS2');
 
+        $suite->addTestSuite('NET_DNS2DefaultsTest');
+        $suite->addTestSuite('NET_DNS2UseTCPTest');
+        $suite->addTestSuite('NET_DNS2RandomizeTest');
+        $suite->addTestSuite('NET_DNS2CNAMETest');
+        $suite->addTestSuite('NET_DNS2TXTTest');
         $suite->addTestSuite('Net_DNS2_ParserTest');
         $suite->addTestSuite('Net_DNS2_ResolverTest');
         $suite->addTestSuite('Net_DNS2_DNSSECTest');
