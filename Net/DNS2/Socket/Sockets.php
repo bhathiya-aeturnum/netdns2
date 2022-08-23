@@ -109,7 +109,7 @@ class Net_DNS2_Socket_Sockets extends Net_DNS2_Socket
         //
         // bind to a local IP/port if it's set
         //
-        if (! is_null($this->local_host) && strlen($this->local_host) > 0) {
+        if (!is_null($this->local_host) && strlen($this->local_host) > 0) {
 
             $result = @socket_bind(
                 $this->sock, $this->local_host, 
