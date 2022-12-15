@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export VERSION=1.3.2
-export BUILD_NUMBER=acquia2
+export VERSION=1.5.2
+export BUILD_NUMBER=acquia5
 export TARGET=Net_DNS2-${VERSION}
 export ARTIFACT=${TARGET}-${BUILD_NUMBER}.tgz
 
@@ -16,6 +16,7 @@ cd build
 cp -rv ../Net ./${TARGET}/
 cp -rv ../tests ./${TARGET}/
 cp ../LICENSE ./${TARGET}
+cp ../README.md ./${TARGET}
 cp ../package.xml ./
 
 # Create the output file

@@ -1,54 +1,21 @@
 <?php
-/* vim: set expandtab tabstop=4 shiftwidth=4 softtabstop=4: */
 
 /**
  * DNS Library for handling lookups and updates. 
  *
- * PHP Version 5
+ * Copyright (c) 2020, Mike Pultz <mike@mikepultz.com>. All rights reserved.
  *
- * Copyright (c) 2010, Mike Pultz <mike@mikepultz.com>.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions
- * are met:
- *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *
- *   * Redistributions in binary form must reproduce the above copyright
- *     notice, this list of conditions and the following disclaimer in
- *     the documentation and/or other materials provided with the
- *     distribution.
- *
- *   * Neither the name of Mike Pultz nor the names of his contributors 
- *     may be used to endorse or promote products derived from this 
- *     software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRIC
- * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * See LICENSE for more details.
  *
  * @category  Networking
  * @package   Net_DNS2
  * @author    Mike Pultz <mike@mikepultz.com>
- * @copyright 2010 Mike Pultz <mike@mikepultz.com>
+ * @copyright 2020 Mike Pultz <mike@mikepultz.com>
  * @license   http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @version   SVN: $Id$
- * @link      http://pear.php.net/package/Net_DNS2
+ * @link      https://netdns2.com/
  * @since     File available since Release 0.6.0
  *
  */
-
 
 /**
  * This is the base class for DNS Resource Records
@@ -82,19 +49,13 @@
  *    /                                               /
  *    +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
  *
- * @category Networking
- * @package  Net_DNS2
- * @author   Mike Pultz <mike@mikepultz.com>
- * @license  http://www.opensource.org/licenses/bsd-license.php  BSD License
- * @link     http://pear.php.net/package/Net_DNS2
- *
  */
 abstract class Net_DNS2_RR
 {
     /*
      * The name of the resource record
      */
-    public $name;
+    public $name = '';
 
     /*
      * The resource record type
@@ -216,6 +177,26 @@ abstract class Net_DNS2_RR
     }
 
     /**
+     * return the same data as __toString(), but as an array, so each value can be 
+     * used without having to parse the string.
+     *
+     * @return array
+     * @access public
+     *
+     */
+    public function asArray()
+    {
+        return [
+
+            'name'  => $this->name,
+            'ttl'   => $this->ttl,
+            'class' => $this->class,
+            'type'  => $this->type,
+            'rdata' => $this->rrToString()
+        ];
+    }
+
+    /**
      * return a formatted string; if a string has spaces in it, then return 
      * it with double quotes around it, otherwise, return it as it was passed in.
      *
@@ -241,7 +222,7 @@ abstract class Net_DNS2_RR
      */
     protected function buildString(array $chunks)
     {
-        $data = array();
+        $data = [];
         $c = 0;
         $in = false;
 
@@ -393,7 +374,13 @@ abstract class Net_DNS2_RR
         //
         // add the RR
         //
-        $data .= pack('n', strlen($rdata)) . $rdata;
+        if ( (is_null($rdata) == false) && (strlen($rdata) > 0) ) {
+
+            $data .= pack('n', strlen($rdata)) . $rdata;
+        } else
+        {
+            $data .= pack('n', 0);
+        }
 
         return $data;
     }
@@ -413,7 +400,7 @@ abstract class Net_DNS2_RR
      */
     public static function parse(Net_DNS2_Packet &$packet)
     {
-        $object = array();
+        $object = [];
 
         //
         // expand the name
@@ -451,31 +438,28 @@ abstract class Net_DNS2_RR
                                 ord($packet->rdata[$packet->offset++]);
 
         if ($packet->rdlength < ($packet->offset + $object['rdlength'])) {
-            return null;
+
+            throw new Net_DNS2_Exception(
+                'failed to parse resource record: packet too small.',
+                Net_DNS2_Lookups::E_PARSE_ERROR
+            );
         }
 
         //
         // lookup the class to use
         //
-        $o      = null;
-        $class  = Net_DNS2_Lookups::$rr_types_id_to_class[$object['type']];
+        if ( (isset(Net_DNS2_Lookups::$rr_types_id_to_class[$object['type']]) == true) &&
+            (class_exists(Net_DNS2_Lookups::$rr_types_id_to_class[$object['type']]) == true) ) {
 
-        if (isset($class)) {
-
-            $o = new $class($packet, $object);
+            $o = new Net_DNS2_Lookups::$rr_types_id_to_class[$object['type']]($packet, $object);
             if ($o) {
-
-                $packet->offset += $object['rdlength'];
+                $packet->offset += $object['rdlength'];            
             }
-        } else {
 
-            throw new Net_DNS2_Exception(
-                'un-implemented resource record type: ' . $object['type'],
-                Net_DNS2_Lookups::E_RR_INVALID
-            );
+            return $o;
         }
 
-        return $o;
+        throw new Net_DNS2_Exception('un-implemented resource record type: ' . $object['type'], Net_DNS2_Lookups::E_RR_INVALID);
     }
 
     /**
@@ -490,7 +474,7 @@ abstract class Net_DNS2_RR
      */
     public function cleanString($data)
     {
-        return strtolower(rtrim($data, '.'));
+        return (is_null($data) == true) ? null : strtolower(rtrim($data, '.'));
     }
 
     /**
@@ -514,7 +498,8 @@ abstract class Net_DNS2_RR
      */
     public static function fromString($line)
     {
-        if (strlen($line) == 0) {
+        if ( (is_null($line) == true) || (strlen($line) == 0) ) {
+
             throw new Net_DNS2_Exception(
                 'empty config line provided.',
                 Net_DNS2_Lookups::E_PARSE_ERROR
@@ -548,16 +533,18 @@ abstract class Net_DNS2_RR
         //
         foreach ($values as $value) {
 
-            switch($value) {
+            switch(true) {
             case is_numeric($value):
 
                 $ttl = array_shift($values);
                 break;
 
             //
-            // PHP SUCKS!
+            // this is here because of a bug in is_numeric() in certain versions of
+            // PHP on windows.
             //
             case ($value === 0):
+                
                 $ttl = array_shift($values);
                 break;
 
@@ -570,7 +557,8 @@ abstract class Net_DNS2_RR
 
                 $type = strtoupper(array_shift($values));
                 break 2;
-                break;   
+                break;
+
             default:
 
                 throw new Net_DNS2_Exception(
@@ -630,12 +618,3 @@ abstract class Net_DNS2_RR
         return $o;
     }
 }
-
-/*
- * Local variables:
- * tab-width: 4
- * c-basic-offset: 4
- * c-hanging-comment-ender-p: nil
- * End:
- */
-?>
