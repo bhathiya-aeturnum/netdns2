@@ -37,7 +37,7 @@ This release is (in most cases) 2x - 10x faster than Net_DNS, as well as include
    <file baseinstalldir="/" md5sum="1a0842fb4f719125ef964c270611964e" name="Net/DNS2/Exception.php" role="php" />
    <file baseinstalldir="/" md5sum="1f6ebf8bca03bde07bad274ffb771d7a" name="Net/DNS2/Header.php" role="php" />
    <file baseinstalldir="/" md5sum="55b62c9d65c69253ea9b87a12ea9401a" name="Net/DNS2/Lookups.php" role="php" />
-   <file baseinstalldir="/" md5sum="2d30d188526126cfe6134208f91108e6" name="Net/DNS2/Notifier.php" role="php" />
+   <file baseinstalldir="/" md5sum="2d30d188526126cfe6134208f91108e6" name="Net/DNS2/Names.php" role="php" />
    <file baseinstalldir="/" md5sum="296147746ecf5a19d2092d02bf9fcc0b" name="Net/DNS2/Notifier.php" role="php" />
    <file baseinstalldir="/" md5sum="9d25d44b6b0290d4f14b4b0825428d29" name="Net/DNS2/Packet.php" role="php" />
    <file baseinstalldir="/" md5sum="dee35a349bb4108722df87ca09af1442" name="Net/DNS2/PrivateKey.php" role="php" />
